@@ -5,6 +5,8 @@ import { FlipText } from "../components/FlipText";
 import gsap from "gsap";
 import { Progress } from "@/components/ui/progress";
 
+const allQuestions = Object.values(questions).flat();
+
 export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentImage, setCurrentImage] = useState<{
@@ -15,21 +17,25 @@ export default function Home() {
   } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageIndex = useRef(0);
-  const totalImages = 9; // Assuming you have 9 images named 1.jpg to 9.jpg in public/images
+  const totalImages = 9;
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [cooldown, setCooldown] = useState(false);
-  const progressRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(100);
-  const [selectedCategory, setSelectedCategory] =
-    useState<keyof typeof questions>("psychological");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [menuOpen, setMenuOpen] = useState(false);
 
   const getRandomQuestion = () => {
     if (cooldown) return;
 
-    const categoryArray = questions[selectedCategory];
+    // Get questions based on selected category
+    const questionPool =
+      selectedCategory === "all"
+        ? allQuestions
+        : questions[selectedCategory as keyof typeof questions];
+
     const random =
-      categoryArray[Math.floor(Math.random() * categoryArray.length)];
+      questionPool[Math.floor(Math.random() * questionPool.length)];
+
     if (isFirstLoad) setIsFirstLoad(false);
     setCurrentQuestion(random);
     showRandomImage();
@@ -182,29 +188,40 @@ export default function Home() {
         />
       </div>
 
-      {/* Kategori Filter - Desktop */}
-      <div className="hidden md:flex absolute top-4 left-1/2 -translate-x-1/2 z-50 space-x-6 text-white text-sm font-medium tracking-widest">
-        {Object.keys(questions).map((category) => (
-          <button
-            key={category}
-            onClick={() =>
-              setSelectedCategory(category as keyof typeof questions)
-            }
-            className={`pb-1 ${
-              selectedCategory === category
-                ? "border-b-2 border-white"
-                : "border-b-2 border-transparent"
-            } hover:border-white transition-all`}
-          >
-            {category.toUpperCase()}
-          </button>
-        ))}
-      </div>
-      {/* Hamburger - Mobile */}
-      <div className="md:hidden absolute top-4 right-4 z-50">
+      {/* Brand and Filter Container */}
+      <div className="absolute top-4 md:top-8 w-full px-4 flex justify-between items-center z-50">
+        {/* Brand QRIOUS */}
+        <div className="text-white text-lg md:text-xl tracking-[0.3em] font-bold">
+          QRIOUS
+        </div>
+
+        {/* Category Filter - Desktop */}
+        <div className="hidden md:flex items-center space-x-6">
+          {["all", ...Object.keys(questions)].map((category) => (
+            <button
+              key={category}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedCategory(category);
+              }}
+              className={`text-white text-sm uppercase tracking-widest relative pb-1 ${
+                selectedCategory === category
+                  ? "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-white"
+                  : "opacity-70 hover:opacity-100"
+              } transition-all`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
+        {/* Hamburger - Mobile */}
         <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="text-white text-xl"
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuOpen(!menuOpen);
+          }}
+          className="md:hidden text-white text-xl"
         >
           ☰
         </button>
@@ -212,21 +229,22 @@ export default function Home() {
 
       {/* Dropdown Menu - Mobile */}
       {menuOpen && (
-        <div className="md:hidden absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-black/90 backdrop-blur-md rounded shadow-lg px-6 py-4 text-white text-center space-y-2">
-          {Object.keys(questions).map((category) => (
+        <div className="md:hidden absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-black/90 backdrop-blur-md rounded shadow-lg px-6 py-4 text-white text-center space-y-3">
+          {["all", ...Object.keys(questions)].map((category) => (
             <button
               key={category}
-              onClick={() => {
-                setSelectedCategory(category as keyof typeof questions);
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedCategory(category);
                 setMenuOpen(false);
               }}
-              className={`block w-full text-base font-medium tracking-widest pb-1 ${
+              className={`block w-full text-base uppercase tracking-widest relative pb-1 ${
                 selectedCategory === category
-                  ? "border-b border-white"
-                  : "border-b border-transparent"
-              } hover:border-white transition-all`}
+                  ? "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-white"
+                  : "opacity-70 hover:opacity-100"
+              } transition-all`}
             >
-              {category.toUpperCase()}
+              {category}
             </button>
           ))}
         </div>
