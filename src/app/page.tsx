@@ -188,13 +188,15 @@ export default function Home() {
         />
       </div>
 
-      {/* Brand & Filter Container - Kiri Atas */}
-      <div className="absolute top-4 md:top-8 left-4 md:left-8 z-50 flex items-center space-x-6 w-auto">
-        {/* Brand QRIOUS */}
+      {/* Brand - Kiri Atas */}
+      <div className="absolute top-4 md:top-8 left-4 md:left-8 z-50">
         <div className="text-white text-lg md:text-xl tracking-[0.3em] font-bold">
           QRIOUS
         </div>
+      </div>
 
+      {/* Category Filter - Kanan Atas */}
+      <div className="absolute top-4 md:top-8 right-4 md:right-8 z-50 flex items-center">
         {/* Category Filter - Desktop */}
         <div className="hidden md:flex items-center space-x-4">
           {["all", ...Object.keys(questions)].map((category) => (
@@ -214,22 +216,22 @@ export default function Home() {
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Hamburger - Mobile */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setMenuOpen(!menuOpen);
-        }}
-        className="md:hidden absolute top-4 right-4 text-white text-xl z-50"
-      >
-        ☰
-      </button>
+        {/* Hamburger - Mobile */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuOpen(!menuOpen);
+          }}
+          className="md:hidden text-white text-xl"
+        >
+          ☰
+        </button>
+      </div>
 
       {/* Dropdown Menu - Mobile */}
       {menuOpen && (
-        <div className="md:hidden absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-black/90 backdrop-blur-md rounded shadow-lg px-6 py-4 text-white text-center space-y-3">
+        <div className="md:hidden absolute top-14 right-4 z-50 bg-black/90 backdrop-blur-md rounded shadow-lg px-6 py-4 text-white text-center space-y-3">
           {["all", ...Object.keys(questions)].map((category) => (
             <button
               key={category}
@@ -249,6 +251,7 @@ export default function Home() {
           ))}
         </div>
       )}
+
       {/* Random Images - Responsive size */}
       {currentImage && (
         <div
