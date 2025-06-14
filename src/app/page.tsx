@@ -302,11 +302,6 @@ export default function Home() {
         QRIOUS
       </div>
 
-      {/* Teks Pendukung - Hidden on mobile */}
-      <div className="hidden md:block absolute top-8 right-8 text-gray-500 text-sm font-light tracking-wider z-50">
-        QUESTION OF THE MOMENT
-      </div>
-
       {/* Konten Utama - Desain Baru */}
       <div className="w-full max-w-4xl mx-auto cursor-pointer px-4 relative z-20">
         {currentQuestion ? (
