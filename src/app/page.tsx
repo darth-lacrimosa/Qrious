@@ -243,7 +243,7 @@ export default function Home() {
           <div className="group relative py-8 md:py-16">
             <FlipText
               text={currentQuestion}
-              className="text-3xl md:text-6xl font-bold leading-tight tracking-[.03em] text-center font-marios"
+              className="text-3xl md:text-6xl font-bold leading-tight tracking-[.03em] text-center text-white font-marios"
             />
 
             {/* Teks kecil di bawah pertanyaan */}
@@ -253,7 +253,7 @@ export default function Home() {
           </div>
         ) : isFirstLoad ? (
           <div className="relative py-8 md:py-16">
-            <h1 className="text-3xl md:text-6xl font-bold text-center leading-tight tracking-[.03em] font-marios">
+            <h1 className="text-3xl md:text-6xl font-bold text-center leading-tight tracking-[.03em] text-white font-marios">
               BEGIN THE CONVERSATION
             </h1>
 
