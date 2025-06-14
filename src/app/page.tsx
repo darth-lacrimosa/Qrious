@@ -191,6 +191,9 @@ export default function Home() {
       {/* Brand and Filter Container */}
       <div className="absolute top-4 md:top-8 w-full px-4 flex justify-between items-center z-50">
         {/* Brand QRIOUS */}
+        <div className="text-white text-lg md:text-xl tracking-[0.3em] font-bold">
+          QRIOUS
+        </div>
 
         {/* Category Filter - Desktop */}
         <div className="hidden md:flex items-center space-x-6">
@@ -292,11 +295,6 @@ export default function Home() {
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
           <div className="absolute top-0 left-1/3 w-0.5 h-full bg-gray-700 transform -translate-x-1/2 rotate-45 origin-top"></div>
         </div>
-      </div>
-
-      {/* Brand QRIOUS - Posisi baru */}
-      <div className="absolute top-4 md:top-8 left-4 md:left-8 text-white text-lg md:text-xl tracking-[0.3em] font-bold z-50">
-        QRIOUS
       </div>
 
       {/* Konten Utama - Desain Baru */}
