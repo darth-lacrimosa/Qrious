@@ -188,15 +188,15 @@ export default function Home() {
         />
       </div>
 
-      {/* Brand and Filter Container */}
-      <div className="absolute top-4 md:top-8 w-full px-4 flex justify-between items-center z-50">
+      {/* Brand & Filter Container - Kiri Atas */}
+      <div className="absolute top-4 md:top-8 left-4 md:left-8 z-50 flex items-center space-x-6 w-auto">
         {/* Brand QRIOUS */}
         <div className="text-white text-lg md:text-xl tracking-[0.3em] font-bold">
           QRIOUS
         </div>
 
         {/* Category Filter - Desktop */}
-        <div className="hidden md:flex items-center space-x-6">
+        <div className="hidden md:flex items-center space-x-4">
           {["all", ...Object.keys(questions)].map((category) => (
             <button
               key={category}
@@ -214,18 +214,18 @@ export default function Home() {
             </button>
           ))}
         </div>
-
-        {/* Hamburger - Mobile */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setMenuOpen(!menuOpen);
-          }}
-          className="md:hidden text-white text-xl"
-        >
-          ☰
-        </button>
       </div>
+
+      {/* Hamburger - Mobile */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setMenuOpen(!menuOpen);
+        }}
+        className="md:hidden absolute top-4 right-4 text-white text-xl z-50"
+      >
+        ☰
+      </button>
 
       {/* Dropdown Menu - Mobile */}
       {menuOpen && (
