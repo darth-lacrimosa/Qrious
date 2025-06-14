@@ -20,31 +20,34 @@ export default function Home() {
   const [cooldown, setCooldown] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(100);
+  const [selectedCategory, setSelectedCategory] =
+    useState<keyof typeof questions>("psychological");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const getRandomQuestion = () => {
     if (cooldown) return;
 
-    const random = questions[Math.floor(Math.random() * questions.length)];
+    const categoryArray = questions[selectedCategory];
+    const random =
+      categoryArray[Math.floor(Math.random() * categoryArray.length)];
     if (isFirstLoad) setIsFirstLoad(false);
     setCurrentQuestion(random);
     showRandomImage();
 
-    // Start cooldown and progress animation
+    // Cooldown logic
     setCooldown(true);
-    setProgress(100); // Reset to full
-
-    const duration = 6000; // 7 seconds
+    setProgress(100);
+    const duration = 6000;
     const startTime = Date.now();
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
       setProgress(remaining);
-
       if (elapsed >= duration) {
         clearInterval(interval);
         setCooldown(false);
       }
-    }, 16); // ~60fps
+    }, 16);
 
     return () => clearInterval(interval);
   };
@@ -179,6 +182,55 @@ export default function Home() {
         />
       </div>
 
+      {/* Kategori Filter - Desktop */}
+      <div className="hidden md:flex absolute top-4 left-1/2 -translate-x-1/2 z-50 space-x-6 text-white text-sm font-medium tracking-widest">
+        {Object.keys(questions).map((category) => (
+          <button
+            key={category}
+            onClick={() =>
+              setSelectedCategory(category as keyof typeof questions)
+            }
+            className={`pb-1 ${
+              selectedCategory === category
+                ? "border-b-2 border-white"
+                : "border-b-2 border-transparent"
+            } hover:border-white transition-all`}
+          >
+            {category.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      {/* Hamburger - Mobile */}
+      <div className="md:hidden absolute top-4 right-4 z-50">
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="text-white text-xl"
+        >
+          ☰
+        </button>
+      </div>
+
+      {/* Dropdown Menu - Mobile */}
+      {menuOpen && (
+        <div className="md:hidden absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-black/90 backdrop-blur-md rounded shadow-lg px-6 py-4 text-white text-center space-y-2">
+          {Object.keys(questions).map((category) => (
+            <button
+              key={category}
+              onClick={() => {
+                setSelectedCategory(category as keyof typeof questions);
+                setMenuOpen(false);
+              }}
+              className={`block w-full text-base font-medium tracking-widest pb-1 ${
+                selectedCategory === category
+                  ? "border-b border-white"
+                  : "border-b border-transparent"
+              } hover:border-white transition-all`}
+            >
+              {category.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      )}
       {/* Random Images - Responsive size */}
       {currentImage && (
         <div
