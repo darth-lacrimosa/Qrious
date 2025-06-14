@@ -191,9 +191,6 @@ export default function Home() {
       {/* Brand and Filter Container */}
       <div className="absolute top-4 md:top-8 w-full px-4 flex justify-between items-center z-50">
         {/* Brand QRIOUS */}
-        <div className="text-white text-lg md:text-xl tracking-[0.3em] font-bold">
-          QRIOUS
-        </div>
 
         {/* Category Filter - Desktop */}
         <div className="hidden md:flex items-center space-x-6">
