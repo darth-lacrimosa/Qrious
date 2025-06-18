@@ -101,3 +101,8 @@ body {
   font-style: normal;
   font-display: swap;
 }
+
+
+body {
+  @apply font-sans bg-background text-foreground;
+}

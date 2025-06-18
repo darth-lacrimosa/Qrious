@@ -1,33 +1,30 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { questions } from "./data/question";
-import { FlipText } from "../components/FlipText";
-import gsap from "gsap";
+import { useState, useRef, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
+import { RandomImage, useRandomImage } from "./utils/randomImage";
+import { questions } from "./data/question";
+import { FlipText } from "@/components/FlipText";
+import { SettingsPanel } from "@/components/SettingsPanel";
 
 const allQuestions = Object.values(questions).flat();
 
 export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState("");
-  const [currentImage, setCurrentImage] = useState<{
-    src: string;
-    position: { x: number; y: number };
-    naturalSize: { width: number; height: number };
-    aspect: string;
-  } | null>(null);
+  const [currentImage, setCurrentImage] = useState<RandomImage | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const imageIndex = useRef(0);
-  const totalImages = 9;
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [cooldown, setCooldown] = useState(false);
   const [progress, setProgress] = useState(100);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+
+  const { getRandomImage, animateImage } = useRandomImage(9);
 
   const getRandomQuestion = () => {
     if (cooldown) return;
 
-    // Get questions based on selected category
     const questionPool =
       selectedCategory === "all"
         ? allQuestions
@@ -40,7 +37,6 @@ export default function Home() {
     setCurrentQuestion(random);
     showRandomImage();
 
-    // Cooldown logic
     setCooldown(true);
     setProgress(100);
     const duration = 6000;
@@ -58,121 +54,26 @@ export default function Home() {
     return () => clearInterval(interval);
   };
 
-  const showRandomImage = () => {
-    if (imageIndex.current >= totalImages) {
-      imageIndex.current = 0; // Reset if we've shown all images
-    }
-
-    const randomNum = (imageIndex.current % totalImages) + 1;
-    imageIndex.current++;
-
-    // Random position (avoiding center where text appears)
-    let x = 0;
-    let y = 0;
-    const positionCase = Math.floor(Math.random() * 4);
-
-    switch (positionCase) {
-      case 0: // Top-right
-        x = Math.random() * 30 + 60;
-        y = Math.random() * 30 + 10;
-        break;
-      case 1: // Bottom-left
-        x = Math.random() * 30 + 10;
-        y = Math.random() * 30 + 60;
-        break;
-      case 2: // Top-left
-        x = Math.random() * 30 + 10;
-        y = Math.random() * 30 + 10;
-        break;
-      case 3: // Bottom-right
-        x = Math.random() * 30 + 60;
-        y = Math.random() * 30 + 60;
-        break;
-    }
-
-    // Create a new image element to get natural dimensions
-    const img = new Image();
-    img.src = `/images/${randomNum}.jpg`;
-    img.onload = () => {
-      const aspect = img.width > img.height ? "landscape" : "portrait";
-
-      // Calculate 80% of original size while maintaining aspect ratio
-      const scaleFactor = 0.3;
-      const width = img.width * scaleFactor;
-      const height = img.height * scaleFactor;
-
-      setCurrentImage({
-        src: `/images/${randomNum}.jpg`,
-        position: { x, y },
-        naturalSize: { width, height },
-        aspect,
-      });
-    };
+  const showRandomImage = async () => {
+    const image = await getRandomImage();
+    setCurrentImage(image);
   };
 
-  // Animate image when it appears
   useEffect(() => {
-    if (!currentImage || !containerRef.current) return;
-
-    const imgElement = containerRef.current.querySelector(".random-image");
-    if (!imgElement) return;
-
-    // Pixelated reveal effect
-    gsap.fromTo(
-      imgElement,
-      {
-        scale: 0.5,
-        opacity: 0,
-      },
-      {
-        scale: 1,
-        opacity: 0.4,
-        duration: 1.2,
-        ease: "power3.out",
-      }
-    );
-
-    // Pixel grid animation
-    const pixels = Array.from({ length: 100 }, (_, i) => {
-      const pixel = document.createElement("div");
-      pixel.className = "absolute bg-black";
-      pixel.style.width = "10%";
-      pixel.style.height = "10%";
-      pixel.style.left = `${(i % 10) * 10}%`;
-      pixel.style.top = `${Math.floor(i / 10) * 10}%`;
-      pixel.style.opacity = "1";
-      return pixel;
-    });
-
-    const pixelContainer = imgElement.querySelector(".pixel-container");
-    if (pixelContainer) {
-      pixels.forEach((pixel) => pixelContainer.appendChild(pixel));
-
-      // Animate pixels with random delays
-      gsap.to(pixels, {
-        opacity: 0,
-        duration: 0.5,
-        stagger: {
-          each: 0.02,
-          from: "random",
-        },
-        ease: "power2.out",
-        onComplete: () => {
-          // Remove pixels after animation
-          while (pixelContainer.firstChild) {
-            pixelContainer.removeChild(pixelContainer.firstChild);
-          }
-        },
-      });
+    if (currentImage && containerRef.current) {
+      const imgElement =
+        containerRef.current.querySelector<HTMLElement>(".random-image");
+      animateImage(imgElement);
     }
   }, [currentImage]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
+
   return (
     <main
-      className={`flex flex-col items-center justify-center min-h-screen bg-black p-4 md:p-8 relative overflow-hidden ${
-        cooldown ? "cursor-not-allowed" : "cursor-pointer"
-      }`}
-      onClick={getRandomQuestion}
+      className={`flex flex-col items-center justify-center min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-50 p-4 md:p-8 relative overflow-hidden`}
       ref={containerRef}
     >
       {/* Progress Bar */}
@@ -180,7 +81,7 @@ export default function Home() {
         <Progress
           value={progress}
           className="h-full rounded-none bg-transparent"
-          indicatorColor="bg-slate-50"
+          indicatorColor="bg-neutral-900 dark:bg-neutral-50"
           style={{
             transform: "scaleX(-1)",
             transformOrigin: "center",
@@ -188,14 +89,13 @@ export default function Home() {
         />
       </div>
 
-      {/* Brand - Kiri Atas */}
+      {/* Brand - Top Left */}
       <div className="absolute top-4 md:top-8 left-4 md:left-8 z-50">
-        <div className="text-white text-lg md:text-xl tracking-[0.3em] font-bold">
+        <div className="text-neutral-900 dark:text-neutral-50 text-lg md:text-xl tracking-[0.3em] font-bold">
           QRIOUS
         </div>
       </div>
-
-      {/* Category Filter - Kanan Atas */}
+      {/* Category Filter - Top Right */}
       <div className="absolute top-4 md:top-8 right-4 md:right-8 z-50 flex items-center">
         {/* Category Filter - Desktop */}
         <div className="hidden md:flex items-center space-x-4">
@@ -206,9 +106,9 @@ export default function Home() {
                 e.stopPropagation();
                 setSelectedCategory(category);
               }}
-              className={`text-white text-sm uppercase tracking-widest relative pb-1 ${
+              className={`text-neutral-900 dark:text-neutral-50 text-sm uppercase tracking-widest relative pb-1 ${
                 selectedCategory === category
-                  ? "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-white"
+                  ? "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-neutral-900 dark:after:bg-neutral-50"
                   : "opacity-70 hover:opacity-100"
               } transition-all`}
             >
@@ -223,7 +123,7 @@ export default function Home() {
             e.stopPropagation();
             setMenuOpen(!menuOpen);
           }}
-          className="md:hidden text-white text-xl"
+          className="md:hidden text-neutral-900 dark:text-neutral-50 text-xl"
         >
           ☰
         </button>
@@ -231,7 +131,7 @@ export default function Home() {
 
       {/* Dropdown Menu - Mobile */}
       {menuOpen && (
-        <div className="md:hidden absolute top-14 right-4 z-50 bg-black/90 backdrop-blur-md rounded shadow-lg px-6 py-4 text-white text-center space-y-3">
+        <div className="md:hidden absolute top-14 right-4 z-50 bg-neutral-100/90 dark:bg-neutral-900/90 backdrop-blur-md rounded shadow-lg px-6 py-4 text-neutral-900 dark:text-neutral-50 text-center space-y-3">
           {["all", ...Object.keys(questions)].map((category) => (
             <button
               key={category}
@@ -242,7 +142,7 @@ export default function Home() {
               }}
               className={`block w-full text-base uppercase tracking-widest relative pb-1 ${
                 selectedCategory === category
-                  ? "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-white"
+                  ? "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-neutral-900 dark:after:bg-neutral-50"
                   : "opacity-70 hover:opacity-100"
               } transition-all`}
             >
@@ -269,7 +169,7 @@ export default function Home() {
             top: `${currentImage.position.y}%`,
             transform: `translate(-50%, -50%)`,
             zIndex: 0,
-            mixBlendMode: "lighten",
+            mixBlendMode: darkMode ? "lighten" : "multiply",
             willChange: "transform, opacity",
           }}
         >
@@ -285,56 +185,63 @@ export default function Home() {
         </div>
       )}
 
-      {/* Desain Baru: Garis Dekoratif */}
+      {/* Decorative Lines */}
       <div className="absolute top-0 left-0 w-full h-full z-10 pointer-events-none">
-        {/* Garis horizontal */}
-        <div className="absolute top-1/4 left-0 right-0 h-px bg-gray-700 transform -translate-y-1/2"></div>
-        <div className="absolute top-3/4 left-0 right-0 h-px bg-gray-700 transform -translate-y-1/2"></div>
+        {/* Horizontal lines */}
+        <div className="absolute top-1/4 left-0 right-0 h-px bg-neutral-200 dark:bg-neutral-800 transform -translate-y-1/2"></div>
+        <div className="absolute top-3/4 left-0 right-0 h-px bg-neutral-200 dark:bg-neutral-800 transform -translate-y-1/2"></div>
 
-        {/* Garis vertikal */}
-        <div className="absolute left-3/4 top-0 bottom-0 w-px bg-gray-700 transform -translate-x-1/2"></div>
+        {/* Vertical lines */}
+        <div className="absolute left-3/4 top-0 bottom-0 w-px bg-neutral-200 dark:bg-neutral-800 transform -translate-x-1/2"></div>
 
-        {/* Garis diagonal */}
+        {/* Diagonal lines */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
-          <div className="absolute top-0 left-1/3 w-0.5 h-full bg-gray-700 transform -translate-x-1/2 rotate-45 origin-top"></div>
+          <div className="absolute top-0 left-1/3 w-0.5 h-full bg-neutral-200 dark:bg-neutral-800 transform -translate-x-1/2 rotate-45 origin-top"></div>
         </div>
       </div>
 
-      {/* Konten Utama - Desain Baru */}
-      <div className="w-full max-w-4xl mx-auto cursor-pointer px-4 relative z-20">
+      {/* Main Content - Area yang bisa diklik untuk pengacakan */}
+      <div
+        className="w-full max-w-4xl mx-auto px-4 relative z-20"
+        onClick={!cooldown ? getRandomQuestion : undefined}
+        style={{ cursor: cooldown ? "not-allowed" : "pointer" }}
+      >
         {currentQuestion ? (
           <div className="group relative py-8 md:py-16">
             <FlipText
               text={currentQuestion}
-              className="text-3xl md:text-6xl font-bold leading-tight tracking-[.03em] text-center text-white font-marios"
+              className="text-3xl md:text-6xl font-bold leading-tight tracking-[.03em] text-center text-neutral-900 dark:text-neutral-50 font-marios"
+              audioEnabled={audioEnabled}
             />
-
-            {/* Teks kecil di bawah pertanyaan */}
-            <p className="mt-4 md:mt-8 text-gray-500 text-center text-xs md:text-sm tracking-widest">
+            <p className="mt-4 md:mt-8 text-neutral-500 dark:text-neutral-400 text-center text-xs md:text-sm tracking-widest">
               REFLECT • SHARE • CONNECT
             </p>
           </div>
         ) : isFirstLoad ? (
           <div className="relative py-8 md:py-16">
-            <h1 className="text-3xl md:text-6xl font-bold text-center leading-tight tracking-[.03em] text-white font-marios">
+            <h1 className="text-3xl md:text-6xl font-bold text-center leading-tight tracking-[.03em] text-neutral-900 dark:text-neutral-50 font-marios">
               BEGIN THE CONVERSATION
             </h1>
-
-            <p className="mt-4 md:mt-8 text-gray-500 text-center text-xs md:text-sm tracking-widest">
-              CLICK ANYWHERE TO START
+            <p className="mt-4 md:mt-8 text-neutral-500 dark:text-neutral-400 text-center text-xs md:text-sm tracking-widest">
+              CLICK HERE TO START
             </p>
           </div>
         ) : null}
       </div>
 
       {/* Copyright - Hidden on mobile */}
-      <div className="hidden md:block absolute bottom-8 left-8 text-gray-600 text-sm">
+      <div className="hidden md:block absolute bottom-8 left-8 text-neutral-500 dark:text-neutral-400 text-sm">
         ©2025
       </div>
 
-      {/* Instruksi - Hidden on mobile */}
-      <div className="hidden md:block absolute bottom-8 right-8 text-gray-500 text-sm font-light">
-        CLICK TO CONTINUE
+      {/* Settings Panel */}
+      <div className="absolute bottom-8 right-8">
+        <SettingsPanel
+          audioEnabled={audioEnabled}
+          setAudioEnabled={setAudioEnabled}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+        />
       </div>
     </main>
   );

@@ -1,36 +1,48 @@
+// components/FlipText.tsx
 import { useEffect, useState, useRef } from "react";
 
 interface FlipTextProps {
   text: string;
   className?: string;
+  audioEnabled?: boolean;
 }
 
 const characters =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789?!. ";
 
-export const FlipText = ({ text, className }: FlipTextProps) => {
+export const FlipText = ({
+  text,
+  className,
+  audioEnabled = true,
+}: FlipTextProps) => {
   const words = text.toUpperCase().split(" ");
   const [displayWords, setDisplayWords] = useState<string[][]>([]);
   const lastHoverTimes = useRef<Record<string, number>>({});
   const audioPool = useRef<HTMLAudioElement[]>([]);
-  const audioInitialized = useRef(false);
+  const animationRefs = useRef<NodeJS.Timeout[]>([]);
 
-  // Initialize audio pool
   useEffect(() => {
-    if (!audioInitialized.current) {
+    // Initialize audio pool
+    if (audioEnabled) {
       audioPool.current = Array(10)
         .fill(null)
         .map(() => {
           const audio = new Audio("/audio/flap.wav");
           audio.volume = 0.3;
-          audio.load(); // Force load audio
+          audio.load();
           return audio;
         });
-      audioInitialized.current = true;
     }
-  }, []);
+
+    return () => {
+      // Cleanup audio and animations
+      audioPool.current.forEach((audio) => audio.pause());
+      animationRefs.current.forEach(clearTimeout);
+    };
+  }, [audioEnabled]);
 
   const playAudio = () => {
+    if (!audioEnabled) return;
     const audio = audioPool.current.find((a) => a.readyState === 4 && a.paused);
     if (audio) {
       audio.currentTime = 0;
@@ -39,60 +51,70 @@ export const FlipText = ({ text, className }: FlipTextProps) => {
   };
 
   useEffect(() => {
-    let currentIndex = 0;
-    let timeout: NodeJS.Timeout;
-
-    const animateWord = (index: number) => {
-      const word = words[index];
-      let frame = 0;
-      const maxFrames = 15;
-
-      // Play initial audio immediately
-      playAudio();
-
-      const interval = setInterval(() => {
-        setDisplayWords((prev) => {
-          const newWords = [...prev];
-          newWords[index] = word
-            .split("")
-            .map((char, i) =>
-              frame >= maxFrames
-                ? word[i]
-                : Math.random() > 0.5
-                ? characters[Math.floor(Math.random() * characters.length)]
-                : char
-            );
-          return newWords;
-        });
-
-        // Play audio randomly during animation
-        if (frame % 2 === 0 && Math.random() > 0.1) {
-          playAudio();
-        }
-
-        frame++;
-        if (frame > maxFrames) clearInterval(interval);
-      }, 30);
-    };
+    // Clear any ongoing animations
+    animationRefs.current.forEach(clearTimeout);
+    animationRefs.current = [];
 
     setDisplayWords(words.map(() => []));
-    const loop = () => {
-      if (currentIndex < words.length) {
-        animateWord(currentIndex);
-        currentIndex++;
-        timeout = setTimeout(loop, 100);
+
+    const animateAllWords = async () => {
+      for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
+        await new Promise<void>((resolve) => {
+          const word = words[wordIndex];
+          let frame = 0;
+          const maxFrames = 15;
+
+          // Play initial audio
+          playAudio();
+
+          const interval = setInterval(() => {
+            setDisplayWords((prev) => {
+              const newWords = [...prev];
+              newWords[wordIndex] = word
+                .split("")
+                .map((char, i) =>
+                  frame >= maxFrames
+                    ? word[i]
+                    : Math.random() > 0.5
+                    ? characters[Math.floor(Math.random() * characters.length)]
+                    : char
+                );
+              return newWords;
+            });
+
+            // Play audio randomly during animation
+            if (frame % 2 === 0 && Math.random() > 0.1) {
+              playAudio();
+            }
+
+            frame++;
+            if (frame > maxFrames) {
+              clearInterval(interval);
+              resolve();
+            }
+          }, 30);
+
+          animationRefs.current.push(interval as unknown as NodeJS.Timeout);
+        });
+
+        // Small delay between words
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
     };
-    loop();
 
-    return () => clearTimeout(timeout);
-  }, [text]);
+    const timeout = setTimeout(animateAllWords, 100);
+    animationRefs.current.push(timeout);
+
+    return () => {
+      animationRefs.current.forEach(clearTimeout);
+    };
+  }, [text, audioEnabled]);
 
   const handleHover = (wordIndex: number, charIndex: number) => {
     const key = `${wordIndex}-${charIndex}`;
     const now = Date.now();
     const last = lastHoverTimes.current[key] || 0;
-    const cooldown = 5000; // 5 detik
+    const cooldown = 5000;
 
     if (now - last < cooldown) return;
     lastHoverTimes.current[key] = now;
@@ -116,6 +138,8 @@ export const FlipText = ({ text, className }: FlipTextProps) => {
       frame++;
       if (frame > maxFrames) clearInterval(interval);
     }, 25);
+
+    animationRefs.current.push(interval as unknown as NodeJS.Timeout);
   };
 
   return (
@@ -134,11 +158,8 @@ export const FlipText = ({ text, className }: FlipTextProps) => {
               {char}
             </span>
           ))}
-          {/* Tambahkan spasi setelah setiap kata */}
           {wIdx < displayWords.length - 1 && (
-            <span className="inline-block w-2" aria-hidden="true">
-              &nbsp;
-            </span>
+            <span className="inline-block w-2">&nbsp;</span>
           )}
         </span>
       ))}
