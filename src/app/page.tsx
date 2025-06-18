@@ -6,7 +6,10 @@ import { questions } from "./data/question";
 import { FlipText } from "@/components/FlipText";
 import { SettingsPanel } from "@/components/SettingsPanel";
 
-const allQuestions = Object.values(questions).flat();
+const allQuestionsExceptRelationship = Object.entries(questions)
+  .filter(([key]) => key !== "relationship")
+  .map(([, value]) => value)
+  .flat();
 
 export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState("");
@@ -15,7 +18,7 @@ export default function Home() {
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [cooldown, setCooldown] = useState(false);
   const [progress, setProgress] = useState(100);
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("random");
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
@@ -26,8 +29,8 @@ export default function Home() {
     if (cooldown) return;
 
     const questionPool =
-      selectedCategory === "all"
-        ? allQuestions
+      selectedCategory === "random"
+        ? allQuestionsExceptRelationship
         : questions[selectedCategory as keyof typeof questions];
 
     const random =
@@ -99,7 +102,7 @@ export default function Home() {
       <div className="absolute top-4 md:top-8 right-4 md:right-8 z-50 flex items-center">
         {/* Category Filter - Desktop */}
         <div className="hidden md:flex items-center space-x-4">
-          {["all", ...Object.keys(questions)].map((category) => (
+          {["random", ...Object.keys(questions)].map((category) => (
             <button
               key={category}
               onClick={(e) => {
@@ -132,7 +135,7 @@ export default function Home() {
       {/* Dropdown Menu - Mobile */}
       {menuOpen && (
         <div className="md:hidden absolute top-14 right-4 z-50 bg-neutral-100/90 dark:bg-neutral-900/90 backdrop-blur-md rounded shadow-lg px-6 py-4 text-neutral-900 dark:text-neutral-50 text-center space-y-3">
-          {["all", ...Object.keys(questions)].map((category) => (
+          {["random", ...Object.keys(questions)].map((category) => (
             <button
               key={category}
               onClick={(e) => {
