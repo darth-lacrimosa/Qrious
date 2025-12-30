@@ -15,6 +15,7 @@ export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentImage, setCurrentImage] = useState<RandomImage | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null); // Ref for menu
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [cooldown, setCooldown] = useState(false);
   const [progress, setProgress] = useState(100);
@@ -62,6 +63,26 @@ export default function Home() {
     setCurrentImage(image);
   };
 
+  // Close menu when clicking outside on mobile
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        // Check if it's not the hamburger button
+        !(event.target as HTMLElement).closest('button[aria-label*="menu"]')
+      ) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuOpen]);
+
   useEffect(() => {
     if (currentImage && containerRef.current) {
       const imgElement =
@@ -73,6 +94,11 @@ export default function Home() {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
+
+  // Format category name for display
+  const formatCategoryName = (category: string) => {
+    return category.charAt(0).toUpperCase() + category.slice(1);
+  };
 
   return (
     <main
@@ -98,6 +124,7 @@ export default function Home() {
           QRIOUS
         </div>
       </div>
+
       {/* Category Filter - Top Right */}
       <div className="absolute top-4 md:top-8 right-4 md:right-8 z-50 flex items-center">
         {/* Category Filter - Desktop */}
@@ -127,6 +154,7 @@ export default function Home() {
             setMenuOpen(!menuOpen);
           }}
           className="md:hidden text-neutral-900 dark:text-neutral-50 text-xl"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
         >
           ☰
         </button>
@@ -134,7 +162,10 @@ export default function Home() {
 
       {/* Dropdown Menu - Mobile */}
       {menuOpen && (
-        <div className="md:hidden absolute top-14 right-4 z-50 bg-neutral-100/90 dark:bg-neutral-900/90 backdrop-blur-md rounded shadow-lg px-6 py-4 text-neutral-900 dark:text-neutral-50 text-center space-y-3">
+        <div
+          ref={menuRef}
+          className="md:hidden absolute top-14 right-4 z-50 bg-neutral-100/95 dark:bg-neutral-900/95 backdrop-blur-md rounded-lg shadow-xl px-6 py-4 text-neutral-900 dark:text-neutral-50 text-center space-y-3 min-w-[180px] border border-neutral-200 dark:border-neutral-800"
+        >
           {["random", ...Object.keys(questions)].map((category) => (
             <button
               key={category}
@@ -143,13 +174,16 @@ export default function Home() {
                 setSelectedCategory(category);
                 setMenuOpen(false);
               }}
-              className={`block w-full text-base uppercase tracking-widest relative pb-1 ${
+              className={`block w-full text-base uppercase tracking-widest relative py-2 ${
                 selectedCategory === category
-                  ? "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-neutral-900 dark:after:bg-neutral-50"
+                  ? "text-neutral-900 dark:text-neutral-50 font-medium"
                   : "opacity-70 hover:opacity-100"
               } transition-all`}
             >
               {category}
+              {selectedCategory === category && (
+                <span className="ml-2 text-sm">✓</span>
+              )}
             </button>
           ))}
         </div>
@@ -231,6 +265,19 @@ export default function Home() {
           </div>
         ) : null}
       </div>
+
+      {/* Active Category Indicator - Mobile Only */}
+      {selectedCategory !== "random" && (
+      <div className="md:hidden fixed bottom-20 left-0 right-0 z-30 flex justify-center">
+        <div className="bg-neutral-100/90 dark:bg-neutral-900/90 backdrop-blur-md rounded-full px-4 py-2 shadow-lg border border-neutral-200 dark:border-neutral-800">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+              {formatCategoryName(selectedCategory)}
+            </span>
+          </div>
+        </div>
+      </div>
+      )}
 
       {/* Copyright - Hidden on mobile */}
       <div className="hidden md:block absolute bottom-8 left-8 text-neutral-500 dark:text-neutral-400 text-sm">
